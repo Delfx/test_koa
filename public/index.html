@@ -1,0 +1,26 @@
+<h1><%- title %></h1>
+
+<form action="/add" method="POST">
+    <div class="form-group">
+        <input type="text" name="thing" class="form-control form-control-lg" placeholder="Add Something you like">
+    </div>
+    <input type="submit" value="Add" class="btn btn-dark btn-lg">
+    <a href="/" class="btn btn-danger btn-lg">Cancel</a>
+</form>
+
+<ul class="list-group mt-3">
+    <%if (things.length === 0) { %>
+    <h3>No data in Database</h3>
+    <% } %>
+
+    <%things.forEach((thing) => { %>
+    <li class="list-group-item">
+        <form action="/delete" method="post">
+            <span><%=thing.thing%></span>
+            <input type="submit" value="Delete" name="del" class="btn btn-dark btn-sm ml-2">
+            <input type="hidden" value="<%= thing.id %>" name="id">
+        </form>
+    </li>
+    <%}); %>
+</ul>
+
