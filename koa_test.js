@@ -2,6 +2,8 @@
 //TODO added to sql to node (https://github.com/mysqljs/mysql)
 //TODO added delete insert
 
+//delete fecth
+
 
 const Koa = require('koa');
 const KoaRouter = require('koa-router');
@@ -9,6 +11,8 @@ const path = require('path');
 const render = require('koa-ejs');
 const bodyParser = require('koa-bodyparser');
 const mysql = require('mysql');
+const koastatic = require('koa-static');
+
 
 const app = new Koa();
 const router = new KoaRouter();
@@ -29,14 +33,14 @@ class DataBase {
         this.connection.connect();
     }
 
-    addThing(thing){
+    addThing(thing) {
         return new Promise((resolve, reject) => {
             this.connection.query('INSERT INTO `things`(`thing`) VALUES (?)', [thing], function (error, result) {
                 if (error) {
                     return reject(error);
                 }
 
-                resolve(result.affectedRows);
+                resolve(result.insertId);
             });
         })
     }
@@ -68,6 +72,7 @@ class DataBase {
 
 const dataBase = new DataBase();
 
+app.use(koastatic(path.join(__dirname, 'static')));
 app.use(bodyParser());
 app.use(router.routes()).use(router.allowedMethods());
 
@@ -80,12 +85,25 @@ render(app, {
 });
 
 router.get('/', index);
-router.get('/add', showAdd);
+router.get('/things', jsonThings);
 router.post('/add', add);
-router.post('/delete', deleteone);
+router.post('/delete', deleteOne);
 
-async function deleteone(ctx) {
+async function jsonThings(ctx) {
+    try {
+        const allThings = await dataBase.getThings();
+
+        ctx.body = allThings;
+    } catch (e) {
+        ctx.throw(500);
+
+        console.log(e);
+    }
+}
+
+async function deleteOne(ctx) {
     const body = ctx.request.body;
+    console.log(body);
 
     if (!('id' in body)) {
         ctx.status = 400;
@@ -112,14 +130,16 @@ async function deleteone(ctx) {
 
             return;
         }
-
-        ctx.redirect('/');
     } catch (e) {
         ctx.throw(500);
 
         console.log(e);
     }
 
+    ctx.body = {
+        success: true
+    }
+    // ctx.redirect('/');
 }
 
 async function index(ctx) {
@@ -141,9 +161,32 @@ async function showAdd(ctx) {
 
 async function add(ctx) {
     const body = ctx.request.body;
-    console.log(body.thing);
-    dataBase.addThing(body.thing);
-    ctx.redirect('/')
+
+    if (!('thing' in body)) {
+        ctx.status = 400;
+        ctx.body = {error: 'Add thing', success: false};
+
+        return;
+    }
+
+    if (typeof body.thing !== 'string') {
+        ctx.status = 400;
+        ctx.body = {error: 'Thing is not string', success: false};
+
+        return;
+    }
+
+    const insertId = await dataBase.addThing(body.thing);
+
+    ctx.body = {
+        id: insertId,
+        success: true,
+        html: await ctx.render('partial/_list', {
+            things: await dataBase.getThings(),
+            writeResp: false,
+            layout: false
+        }),
+    };
 }
 
 
