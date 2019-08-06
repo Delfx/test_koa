@@ -88,6 +88,7 @@ router.get('/', index);
 router.get('/things', jsonThings);
 router.post('/add', add);
 router.post('/delete', deleteOne);
+// router.post('/change', change);
 
 async function jsonThings(ctx) {
     try {
@@ -100,6 +101,14 @@ async function jsonThings(ctx) {
         console.log(e);
     }
 }
+
+// async function change() {
+//     try {
+//
+//     } catch (e) {
+//
+//     }
+// }
 
 async function deleteOne(ctx) {
     const body = ctx.request.body;

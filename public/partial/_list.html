@@ -5,10 +5,13 @@
 
     <%things.forEach((thing) => { %>
     <li class="list-group-item">
-        <form action="/delete" method="post" class="deleteForm">
+        <form action="/delete" method="post" class="deleteForm d-inline-block" id="D<%= thing.id %>">
             <span><%=thing.thing%></span>
-            <input type="submit" value="Delete" name="del" class="btn btn-dark btn-sm ml-2">
-            <input type="hidden" value="<%= thing.id %>" name="id">
+            <input type="submit" value="Delete" name="delete" form="D<%= thing.id %>" class="btn btn-dark btn-sm ml-2">
+            <input type="hidden" value="<%= thing.id %>" form="D<%= thing.id %>" name="id">
+        </form>
+        <form action="/change" class="d-inline-block">
+            <input type="submit" value="Change" name="change" class="btn btn-sm ml-2">
         </form>
     </li>
     <%}); %>
