@@ -23,9 +23,67 @@ async function addThing(opts) {
         if (data.success) {
             addNewThing(data);
             removeThing();
+            update()
         }
     } catch (e) {
         console.log(e);
+    }
+}
+
+async function update() {
+    const selectForm = document.getElementsByClassName('groupForm');
+    for (i = 0; i < selectForm.length; i++) {
+        const getId = selectForm[i];
+
+        selectForm[i].addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const inputField = document.createElement('input');
+            const inputFieldHidden = document.createElement('input');
+            const creatForm = document.createElement('form');
+            const createButton = document.createElement('input');
+            const thingText = getId.getElementsByTagName('span')[0].textContent;
+            const targetId = event.target.querySelector('.id').value;
+
+            creatForm.method = 'post';
+            creatForm.className = ('updateForm d-inline');
+            inputField.className = 'form-control';
+            inputField.value = thingText;
+            inputField.type = 'text';
+            inputField.name = 'thing';
+            inputFieldHidden.type = 'hidden';
+            inputFieldHidden.value = targetId;
+            inputFieldHidden.name = 'id';
+            createButton.type = 'submit';
+            createButton.value = 'Ok';
+            createButton.className = 'btn-danger btn btn-sm mt-2';
+
+            getId.parentNode.appendChild(creatForm).appendChild(inputField);
+            getId.parentNode.appendChild(creatForm).appendChild(createButton);
+            getId.parentNode.appendChild(creatForm).appendChild(inputFieldHidden);
+
+            getId.remove();
+
+            const selectUpdateForm = document.getElementsByClassName('updateForm');
+            for (i = 0; selectUpdateForm.length; i++) {
+                const getUpdateForm = selectUpdateForm[i];
+                selectUpdateForm[i].addEventListener('submit', async function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(getUpdateForm);
+                    const data = new URLSearchParams(formData);
+
+                    try {
+                        const response = await fetch('/update', {
+                            method: 'post',
+                            body: data
+                        });
+                    } catch (e) {
+                        console.log(e);
+                    }
+                });
+            }
+        });
     }
 }
 
@@ -36,7 +94,7 @@ async function removeThing() {
         selectDeleteForm[i].addEventListener('submit', async function (event) {
             event.preventDefault();
 
-            getId.parentNode.remove();
+            getId.parentNode.parentNode.remove();
             const formData = new FormData(getId);
             const data = new URLSearchParams(formData);
 
@@ -67,4 +125,4 @@ async function removeThing() {
 })();
 
 removeThing();
-
+update();

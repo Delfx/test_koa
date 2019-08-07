@@ -57,9 +57,22 @@ class DataBase {
         })
     }
 
+    updatethings(thing, id) {
+        return new Promise((resolve, reject) => {
+            this.connection.query('UPDATE `things` SET `thing`="' + thing + '" WHERE `id`="' + id + '"', function (error, result) {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result.affectedRows);
+            });
+        })
+    }
+
     deleteThing(id) {
         return new Promise((resolve, reject) => {
-            this.connection.query('DELETE FROM `things` WHERE `id` = ?', [id], function (error, result) {
+            this.connection.query('DELETE FROM `things` WHERE `id` = "' + id + '"', function (error, result) {
+
                 if (error) {
                     return reject(error);
                 }
@@ -88,7 +101,7 @@ router.get('/', index);
 router.get('/things', jsonThings);
 router.post('/add', add);
 router.post('/delete', deleteOne);
-// router.post('/change', change);
+router.post('/update', update);
 
 async function jsonThings(ctx) {
     try {
@@ -102,13 +115,19 @@ async function jsonThings(ctx) {
     }
 }
 
-// async function change() {
-//     try {
-//
-//     } catch (e) {
-//
-//     }
-// }
+async function update(ctx) {
+
+    try {
+        const body = ctx.request.body;
+        console.log(body);
+        dataBase.updatethings(body.thing, body.id);
+        index(ctx);
+    } catch (e) {
+        ctx.throw(404);
+
+        console.log(e);
+    }
+}
 
 async function deleteOne(ctx) {
     const body = ctx.request.body;
