@@ -116,12 +116,15 @@ async function jsonThings(ctx) {
 }
 
 async function update(ctx) {
-
+//TODO if
     try {
         const body = ctx.request.body;
         console.log(body);
         dataBase.updatethings(body.thing, body.id);
-        index(ctx);
+
+        ctx.body = {
+            success: true
+        }
     } catch (e) {
         ctx.throw(404);
 
@@ -135,7 +138,10 @@ async function deleteOne(ctx) {
 
     if (!('id' in body)) {
         ctx.status = 400;
-        ctx.body = 'Missing id';
+        ctx.body = {
+            error: 'Missing ID',
+            success: false
+        };
 
         return;
     }
@@ -144,7 +150,10 @@ async function deleteOne(ctx) {
 
     if (Number.isNaN(id)) {
         ctx.status = 400;
-        ctx.body = 'Invalid ID';
+        ctx.body = {
+            error: 'Invalid ID',
+            success: false
+        };
 
         return;
     }
@@ -154,19 +163,24 @@ async function deleteOne(ctx) {
 
         if (affectedRows === 0) {
             ctx.status = 404;
-            ctx.body = 'Not Found';
+            ctx.body = {
+                error: 'Not Found',
+                success: false
+            };
 
             return;
         }
+
+        ctx.body = {
+            success: true
+        };
     } catch (e) {
         ctx.throw(500);
 
         console.log(e);
     }
 
-    ctx.body = {
-        success: true
-    }
+
     // ctx.redirect('/');
 }
 

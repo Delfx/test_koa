@@ -1,3 +1,5 @@
+//TODO add new thing without deleting it ///
+
 async function addNewThing(data) {
     const list = document.getElementById('allthings');
 
@@ -31,22 +33,23 @@ async function addThing(opts) {
 }
 
 async function update() {
-    const selectForm = document.getElementsByClassName('groupForm');
-    for (i = 0; i < selectForm.length; i++) {
-        const getId = selectForm[i];
+    const selectForm = document.getElementsByClassName('changeForm');
+    for (const updateForm of selectForm) {
 
-        selectForm[i].addEventListener('submit', async function (event) {
+        updateForm.addEventListener('submit', async function (event) {
             event.preventDefault();
 
+            const allForms = updateForm.parentNode;
             const inputField = document.createElement('input');
             const inputFieldHidden = document.createElement('input');
             const creatForm = document.createElement('form');
             const createButton = document.createElement('input');
-            const thingText = getId.getElementsByTagName('span')[0].textContent;
+            const thingText = allForms.querySelector('span').textContent;
             const targetId = event.target.querySelector('.id').value;
 
             creatForm.method = 'post';
             creatForm.className = ('updateForm d-inline');
+            // createForm.classList.add('');
             inputField.className = 'form-control';
             inputField.value = thingText;
             inputField.type = 'text';
@@ -58,16 +61,31 @@ async function update() {
             createButton.value = 'Ok';
             createButton.className = 'btn-danger btn btn-sm mt-2';
 
-            getId.parentNode.appendChild(creatForm).appendChild(inputField);
-            getId.parentNode.appendChild(creatForm).appendChild(createButton);
-            getId.parentNode.appendChild(creatForm).appendChild(inputFieldHidden);
+            creatForm.appendChild(inputField);
+            creatForm.appendChild(createButton);
+            creatForm.appendChild(inputFieldHidden);
 
-            getId.remove();
 
-            const selectUpdateForm = document.getElementsByClassName('updateForm');
-            for (i = 0; selectUpdateForm.length; i++) {
+            // creatUpdateForm.appendChild(creatForm).appendChild(inputField);
+            // creatUpdateForm.appendChild(creatForm).appendChild(createButton);
+            // creatUpdateForm.appendChild(creatForm).appendChild(inputFieldHidden);
+
+            for (const form of allForms.querySelectorAll('form')) {
+                //css Display none -- display block
+                form.remove();
+            }
+
+            allForms.appendChild(creatForm);
+
+            const selectUpdateForm = document.querySelectorAll('.updateForm');
+            // selectUpdateForm.addEventListener('submit', function (event) {
+            //     console.log(event.target);
+            //     event.preventDefault();
+            // });
+            for (let i = 0; i < selectUpdateForm.length; i++) {
                 const getUpdateForm = selectUpdateForm[i];
                 selectUpdateForm[i].addEventListener('submit', async function (event) {
+                    console.log("hello");
                     event.preventDefault();
 
                     const formData = new FormData(getUpdateForm);
@@ -89,23 +107,31 @@ async function update() {
 
 async function removeThing() {
     const selectDeleteForm = document.getElementsByClassName('deleteForm');
-    for (i = 0; i < selectDeleteForm.length; i++) {
-        const getId = selectDeleteForm[i];
-        selectDeleteForm[i].addEventListener('submit', async function (event) {
+
+    for (const form of selectDeleteForm) {
+        form.addEventListener('submit', async function (event) {
             event.preventDefault();
 
-            getId.parentNode.parentNode.remove();
-            const formData = new FormData(getId);
-            const data = new URLSearchParams(formData);
+            const entry = form.parentNode.parentNode;
+
+            const formData = new FormData(form);
+            const formBody = new URLSearchParams(formData);
 
             try {
                 const response = await fetch('/delete', {
                     method: 'post',
-                    body: data
+                    body: formBody
                 });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    entry.remove();
+                }
             } catch (e) {
                 console.log(e);
             }
+
         });
     }
 }
