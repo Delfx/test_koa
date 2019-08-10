@@ -12,6 +12,8 @@ const render = require('koa-ejs');
 const bodyParser = require('koa-bodyparser');
 const mysql = require('mysql');
 const koastatic = require('koa-static');
+const Joi = require('@hapi/joi');
+
 
 
 const app = new Koa();

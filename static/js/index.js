@@ -49,21 +49,22 @@ async function update() {
 
             creatForm.method = 'post';
             creatForm.className = ('updateForm d-inline');
-            // createForm.classList.add('');
+
+            creatForm.appendChild(inputField);
             inputField.className = 'form-control';
             inputField.value = thingText;
             inputField.type = 'text';
             inputField.name = 'thing';
+
+            creatForm.appendChild(inputFieldHidden);
             inputFieldHidden.type = 'hidden';
             inputFieldHidden.value = targetId;
             inputFieldHidden.name = 'id';
+
+            creatForm.appendChild(createButton);
             createButton.type = 'submit';
             createButton.value = 'Ok';
             createButton.className = 'btn-danger btn btn-sm mt-2';
-
-            creatForm.appendChild(inputField);
-            creatForm.appendChild(createButton);
-            creatForm.appendChild(inputFieldHidden);
 
 
             // creatUpdateForm.appendChild(creatForm).appendChild(inputField);
@@ -99,6 +100,8 @@ async function update() {
                     } catch (e) {
                         console.log(e);
                     }
+
+                    allForms.remove();
                 });
             }
         });
