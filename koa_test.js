@@ -59,6 +59,18 @@ class DataBase {
         })
     }
 
+    getThingOne() {
+        return new Promise((resolve, reject) => {
+            this.connection.query('SELECT `id`, `thing`, `checkbox` FROM `things` ORDER BY id DESC LIMIT 1', function (error, result) {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result);
+            });
+        })
+    }
+
     updatethings(thing, id) {
         return new Promise((resolve, reject) => {
             this.connection.query('UPDATE `things` SET `thing`="' + thing + '" WHERE `id`="' + id + '"', function (error, result) {
@@ -118,7 +130,7 @@ async function jsonThings(ctx) {
 }
 
 async function update(ctx) {
-//TODO if
+
     try {
         const body = ctx.request.body;
         console.log(body);
@@ -182,8 +194,6 @@ async function deleteOne(ctx) {
         console.log(e);
     }
 
-
-    // ctx.redirect('/');
 }
 
 async function index(ctx) {
@@ -199,13 +209,9 @@ async function index(ctx) {
     }
 }
 
-async function showAdd(ctx) {
-    await ctx.render('add');
-}
-
 async function add(ctx) {
     const body = ctx.request.body;
-
+    console.log(body);
     if (!('thing' in body)) {
         ctx.status = 400;
         ctx.body = {error: 'Add thing', success: false};
@@ -221,12 +227,13 @@ async function add(ctx) {
     }
 
     const insertId = await dataBase.addThing(body.thing);
+    console.log(await dataBase.getThingOne());
 
     ctx.body = {
         id: insertId,
         success: true,
-        html: await ctx.render('partial/_list', {
-            things: await dataBase.getThings(),
+        html: await ctx.render('partial/_listOne', {
+            things: await dataBase.getThingOne(),
             writeResp: false,
             layout: false
         }),

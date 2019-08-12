@@ -1,16 +1,8 @@
 //TODO add new thing without deleting it ///
 
 async function addNewThing(data) {
-    const list = document.getElementById('allthings');
-
-    if (list) {
-        list.remove();
-    }
-
-    const getContainers = document.querySelectorAll('.container');
-    getContainers[1].insertAdjacentHTML('beforeend', data.html);
-
-
+    const getContainers = document.querySelector('#allthings');
+    getContainers.insertAdjacentHTML('beforeend', data.html);
 }
 
 async function addThing(opts) {
@@ -66,27 +58,17 @@ async function update() {
             createButton.value = 'Ok';
             createButton.className = 'btn-danger btn btn-sm mt-2';
 
-
-            // creatUpdateForm.appendChild(creatForm).appendChild(inputField);
-            // creatUpdateForm.appendChild(creatForm).appendChild(createButton);
-            // creatUpdateForm.appendChild(creatForm).appendChild(inputFieldHidden);
-
             for (const form of allForms.querySelectorAll('form')) {
-                //css Display none -- display block
-                form.remove();
+                form.style.visibility = 'hidden';
+                form.style.position = 'absolute';
             }
 
             allForms.appendChild(creatForm);
 
             const selectUpdateForm = document.querySelectorAll('.updateForm');
-            // selectUpdateForm.addEventListener('submit', function (event) {
-            //     console.log(event.target);
-            //     event.preventDefault();
-            // });
             for (let i = 0; i < selectUpdateForm.length; i++) {
                 const getUpdateForm = selectUpdateForm[i];
                 selectUpdateForm[i].addEventListener('submit', async function (event) {
-                    console.log("hello");
                     event.preventDefault();
 
                     const formData = new FormData(getUpdateForm);
@@ -97,11 +79,21 @@ async function update() {
                             method: 'post',
                             body: data
                         });
+
+                        const dataSuccess = await response.json();
                     } catch (e) {
                         console.log(e);
                     }
 
-                    allForms.remove();
+                    for (const form of allForms.querySelectorAll('form')) {
+                        //css Display none -- display block
+                        form.style.visibility = 'visible';
+                        form.style.position = 'static';
+                    }
+
+                    const selectInputValue = event.target.querySelector('input').value;
+                    event.target.parentNode.querySelector('span').innerHTML = selectInputValue;
+                    event.target.remove();
                 });
             }
         });
@@ -137,6 +129,10 @@ async function removeThing() {
 
         });
     }
+}
+
+async  function addone (){
+
 }
 
 (function () {
