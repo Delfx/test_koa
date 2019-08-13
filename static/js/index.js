@@ -3,6 +3,9 @@
 async function addNewThing(data) {
     const getContainers = document.querySelector('#allthings');
     getContainers.insertAdjacentHTML('beforeend', data.html);
+    //TODO create FORM without insertAdjacentHTML
+    //TODO login
+    //TODO filter things
 }
 
 async function addThing(opts) {
@@ -59,8 +62,10 @@ async function update() {
             createButton.className = 'btn-danger btn btn-sm mt-2';
 
             for (const form of allForms.querySelectorAll('form')) {
-                form.style.visibility = 'hidden';
-                form.style.position = 'absolute';
+                form.style.display = 'none';
+                form.classList.remove('d-inline');
+                // form.style.visibility = 'hidden';
+                // form.style.position = 'absolute';
             }
 
             allForms.appendChild(creatForm);
@@ -72,28 +77,32 @@ async function update() {
                     event.preventDefault();
 
                     const formData = new FormData(getUpdateForm);
-                    const data = new URLSearchParams(formData);
+                    const formParams = new URLSearchParams(formData);
 
                     try {
                         const response = await fetch('/update', {
                             method: 'post',
-                            body: data
+                            body: formParams
                         });
 
-                        const dataSuccess = await response.json();
+                        const data = await response.json();
+
+                        if (data.success) {
+                            for (const form of allForms.querySelectorAll('form')) {
+                                form.style.display = 'block';
+                                form.classList.add('d-inline');
+                            }
+
+                            const selectInputValue = event.target.querySelector('input').value;
+                            event.target.parentNode.querySelector('span').innerHTML = selectInputValue;
+                            event.target.remove();
+                        }
+
                     } catch (e) {
                         console.log(e);
                     }
 
-                    for (const form of allForms.querySelectorAll('form')) {
-                        //css Display none -- display block
-                        form.style.visibility = 'visible';
-                        form.style.position = 'static';
-                    }
 
-                    const selectInputValue = event.target.querySelector('input').value;
-                    event.target.parentNode.querySelector('span').innerHTML = selectInputValue;
-                    event.target.remove();
                 });
             }
         });
@@ -131,7 +140,7 @@ async function removeThing() {
     }
 }
 
-async  function addone (){
+async function addone() {
 
 }
 
