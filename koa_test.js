@@ -1,9 +1,7 @@
-//TODO add
 //TODO added to sql to node (https://github.com/mysqljs/mysql)
-//TODO added delete insert
-
-//delete fecth
-
+//TODO password encription bcrypt
+//TODO add addUSER???
+//TODO login strategy
 
 const Koa = require('koa');
 const KoaRouter = require('koa-router');
@@ -13,7 +11,9 @@ const bodyParser = require('koa-bodyparser');
 const mysql = require('mysql');
 const koastatic = require('koa-static');
 const Joi = require('@hapi/joi');
-
+const session = require('koa-session');
+const passport = require('koa-passport');
+const LocalStrategy = require('passport-local').Strategy;
 
 
 const app = new Koa();
@@ -33,6 +33,18 @@ class DataBase {
         });
 
         this.connection.connect();
+    }
+
+    addUser(name, pass) {
+        return new Promise((resolve, reject) => {
+            this.connection.query('INSERT INTO `users`(`name`, `pass`) VALUES (?, ?)', [name, pass], function (error, result) {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result.insertId);
+            });
+        })
     }
 
     addThing(thing) {
@@ -71,6 +83,30 @@ class DataBase {
         })
     }
 
+    checkUser(userName, password) {
+        return new Promise((resolve, reject) => {
+            this.connection.query('SELECT * FROM `users` WHERE `name`=? AND `pass`=?', [userName, password], function (error, result) {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result[0]);
+            });
+        })
+    }
+
+    getUserId(id) {
+        return new Promise((resolve, reject) => {
+            this.connection.query('SELECT * FROM `users` WHERE `id`=?', [id], function (error, result) {
+                if (error) {
+                    return reject(error);
+                }
+
+                resolve(result[0]);
+            });
+        })
+    }
+
     updatethings(thing, id) {
         return new Promise((resolve, reject) => {
             this.connection.query('UPDATE `things` SET `thing`=? WHERE `id`=?', [thing, id], function (error, result) {
@@ -85,7 +121,7 @@ class DataBase {
 
     deleteThing(id) {
         return new Promise((resolve, reject) => {
-            this.connection.query('DELETE FROM `things` WHERE `id` = ?',[id], function (error, result) {
+            this.connection.query('DELETE FROM `things` WHERE `id` = ?', [id], function (error, result) {
 
                 if (error) {
                     return reject(error);
@@ -98,9 +134,53 @@ class DataBase {
 }
 
 const dataBase = new DataBase();
+app.keys = ['i m secret'];
 
 app.use(koastatic(path.join(__dirname, 'static')));
 app.use(bodyParser());
+app.keys = ['secret'];
+app.use(session({}, app));
+
+passport.serializeUser(function (user, done) {
+    done(null, user.id);
+});
+
+passport.deserializeUser(async function (id, done) {
+    try {
+        const userObj = await dataBase.getUserId(id);
+        done(null, {
+            id: userObj.id,
+            username: userObj.name
+        });
+    } catch (e) {
+        done(e);
+    }
+});
+
+passport.use(new LocalStrategy(async function (username, password, done) {
+    try {
+        const userObj = await dataBase.checkUser(username, password);
+
+        if (userObj) {
+            done(null, {
+                id: userObj.id,
+                username: userObj.name
+            });
+        } else {
+            done(null, false);
+        }
+    } catch (e) {
+        done(e);
+    }
+
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(async (ctx, next) => {
+    ctx.state.isLogged = ctx.isAuthenticated();
+    await next();
+});
 app.use(router.routes()).use(router.allowedMethods());
 
 render(app, {
@@ -113,6 +193,10 @@ render(app, {
 
 router.get('/', index);
 router.get('/things', jsonThings);
+router.get('/login', userLogin);
+router.get('/logout', userLogout);
+router.post('/registration', addUser);
+router.post('/login', userCustom);
 router.post('/add', add);
 router.post('/delete', deleteOne);
 router.post('/update', update);
@@ -123,10 +207,57 @@ async function jsonThings(ctx) {
 
         ctx.body = allThings;
     } catch (e) {
-        ctx.throw(500);
-
         console.log(e);
+
+        ctx.throw(500);
     }
+}
+
+async function userCustom(ctx) {
+    return passport.authenticate('local', function (err, user, info, status) {
+        if (err) {
+            console.log(err);
+
+            ctx.throw(500);
+        }
+
+        if (user) {
+            ctx.redirect('/');
+            return ctx.login(user);
+        } else {
+            ctx.redirect('/login');
+        }
+    })(ctx);
+}
+
+async function userLogout(ctx) {
+    if (!ctx.isAuthenticated()) {
+        ctx.status = 403;
+
+        return;
+    }
+
+    ctx.logout();
+    ctx.redirect('/');
+}
+
+async function checkUser() {
+
+    passport.authenticate('local', {
+        successRedirect: '/',
+        failureRedirect: '/'
+    });
+}
+
+async function addUser(ctx) {
+    const body = ctx.request.body;
+    console.log(body);
+    dataBase.addUser(body.username, body.password);
+    ctx.redirect('/')
+}
+
+async function userLogin(ctx) {
+    await ctx.render('login');
 }
 
 async function update(ctx) {
@@ -197,15 +328,16 @@ async function deleteOne(ctx) {
 }
 
 async function index(ctx) {
+    // console.log(ctx.state.isLogged);
     try {
         await ctx.render('index', {
             title: 'things i love',
             things: await dataBase.getThings()
         });
     } catch (e) {
-        ctx.throw(500);
-
         console.log(e);
+
+        ctx.throw(500);
     }
 }
 
