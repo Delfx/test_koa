@@ -1,5 +1,3 @@
-//TODO add new thing without deleting it ///
-
 async function addNewThing(data) {
     const getContainers = document.querySelector('#allthings');
     getContainers.insertAdjacentHTML('beforeend', data.html);

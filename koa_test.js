@@ -1,4 +1,3 @@
-//TODO added to sql to node (https://github.com/mysqljs/mysql)
 //TODO password encription bcrypt
 //TODO add addUSER???
 //TODO login strategy
@@ -14,7 +13,7 @@ const Joi = require('@hapi/joi');
 const session = require('koa-session');
 const passport = require('koa-passport');
 const LocalStrategy = require('passport-local').Strategy;
-
+const bcrypt = require('bcryptjs');
 
 const app = new Koa();
 const router = new KoaRouter();
@@ -83,9 +82,31 @@ class DataBase {
         })
     }
 
-    checkUser(userName, password) {
+    async checkUser(userName, password) {
+        const user = await this.getUserByName(userName);
+
+        if (!user) {
+            return null;
+        }
+
         return new Promise((resolve, reject) => {
-            this.connection.query('SELECT * FROM `users` WHERE `name`=? AND `pass`=?', [userName, password], function (error, result) {
+            bcrypt.compare(password, user.pass.toString(), function (err, res) {
+                if (err) {
+                    return reject(err);
+                }
+
+                if (res) {
+                    resolve(user);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    getUserId(id) {
+        return new Promise((resolve, reject) => {
+            this.connection.query('SELECT * FROM `users` WHERE `id`=?', [id], function (error, result) {
                 if (error) {
                     return reject(error);
                 }
@@ -95,9 +116,9 @@ class DataBase {
         })
     }
 
-    getUserId(id) {
+    getUserByName(name) {
         return new Promise((resolve, reject) => {
-            this.connection.query('SELECT * FROM `users` WHERE `id`=?', [id], function (error, result) {
+            this.connection.query('SELECT * FROM `users` WHERE `name`=?', [name], function (error, result) {
                 if (error) {
                     return reject(error);
                 }
@@ -134,12 +155,28 @@ class DataBase {
 }
 
 const dataBase = new DataBase();
-app.keys = ['i m secret'];
 
+app.keys = ['i m secret'];
 app.use(koastatic(path.join(__dirname, 'static')));
 app.use(bodyParser());
-app.keys = ['secret'];
 app.use(session({}, app));
+
+passport.use(new LocalStrategy(async function (username, password, done) {
+    try {
+        const userObj = await dataBase.checkUser(username, password);
+
+        if (userObj) {
+            done(null, {
+                id: userObj.id,
+                username: userObj.name
+            });
+        } else {
+            done(null, false);
+        }
+    } catch (e) {
+        done(e);
+    }
+}));
 
 passport.serializeUser(function (user, done) {
     done(null, user.id);
@@ -157,23 +194,6 @@ passport.deserializeUser(async function (id, done) {
     }
 });
 
-passport.use(new LocalStrategy(async function (username, password, done) {
-    try {
-        const userObj = await dataBase.checkUser(username, password);
-
-        if (userObj) {
-            done(null, {
-                id: userObj.id,
-                username: userObj.name
-            });
-        } else {
-            done(null, false);
-        }
-    } catch (e) {
-        done(e);
-    }
-
-}));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -195,6 +215,7 @@ router.get('/', index);
 router.get('/things', jsonThings);
 router.get('/login', userLogin);
 router.get('/logout', userLogout);
+router.get('/registration', addUserTemplate);
 router.post('/registration', addUser);
 router.post('/login', userCustom);
 router.post('/add', add);
@@ -251,9 +272,17 @@ async function checkUser() {
 
 async function addUser(ctx) {
     const body = ctx.request.body;
-    console.log(body);
-    dataBase.addUser(body.username, body.password);
+    bcrypt.genSalt(10, function (err, salt) {
+        bcrypt.hash(body.password, salt, async function (err, hash) {
+            await dataBase.addUser(body.username, hash);
+        });
+    });
     ctx.redirect('/')
+}
+
+
+async function addUserTemplate(ctx) {
+    await ctx.render('register');
 }
 
 async function userLogin(ctx) {
